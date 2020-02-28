@@ -1,0 +1,36 @@
+{
+  "name": "desofi",
+  "version": "0.0.1",
+  "description": "Desofi",
+  "main": "buidler.config.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "@nomiclabs/buidler": "^1.2.0",
+    "@nomiclabs/buidler-truffle5": "^1.2.0",
+    "@nomiclabs/buidler-web3": "^1.2.0",
+    "@openzeppelin/contracts": "^2.5.0",
+    "web3": "^1.2.6"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zincoshine/desofi.git"
+  },
+  "keywords": [
+    "DeFi",
+    "Social",
+    "Finance",
+    "Microfinance"
+  ],
+  "author": "partha@pillarproject.io", "rafa@pillarproject.io", "alazarevski", "msazdova"
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zincoshine/desofi/issues"
+  },
+  "homepage": "https://github.com/zincoshine/desofi#readme"
+}
