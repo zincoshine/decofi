@@ -37,6 +37,10 @@ contract SocialFund is Ownable {
         _;
     }
 
+    event Lottery(address indexed winner,uint8 cycle);
+    event LoanInitiated(address indexed member, uint256 amount, uint8 cycle);
+    event LoanRepaid(address indexed member, uint256 amount, uint8 cycle);
+
     constructor(string memory _fundName, 
                 uint256 _fundTerm, 
                 uint256 _numParts,
@@ -52,7 +56,6 @@ contract SocialFund is Ownable {
         provider = LendingPoolAddressesProvider(AAVE_LENDING_POOL_ADDR);
         lendingPool = LendingPool(provider.getLendingPool());
         depositToken = IERC20(_tokenAddr);
-        //sablier = IERC1620(SABLIER_ADDR);
         MAX_LOAN_AMT = fundAmt.mul(fundTerm).mul(numParts).mul(75).div(100);
     }
 
@@ -85,22 +88,8 @@ contract SocialFund is Ownable {
             amt = amt.add(amount);
             depositToken.transferFrom(theMembers[i],address(this),amount);
         }
-        //if latest cycle is > 1 then repay loan before borrowing again
-        //while repaying pay 1 more than what was borrowed
-        if(latestCycle > 1) {
-            lendingPool.repay(address(depositToken), amt.add(1), msg.sender);
-        } else {
-            lendingPool.deposit(address(depositToken), amt, 0);
-            lendingPool.setUserUseReserveAsCollateral(address(depositToken),true);
-        }
-        
-        if(latestCycle < fundTerm) {
-            //allot the loan to the chosen member
-            //borrow based on fixed interest rate
-            lendingPool.borrow(address(depositToken),MAX_LOAN_AMT,1,0);
-            members[chosen].loanTaken = true;
-            return depositToken.approve(chosen,MAX_LOAN_AMT);
-        } else {
+
+        if(latestCycle == fundTerm) {
             lendingPool.repay(address(depositToken), amt.add(1), msg.sender);
             //TODO distribute interest equally to all
             aToken = AToken(ATOKEN_ADDR);
@@ -108,7 +97,21 @@ contract SocialFund is Ownable {
             aToken.redeem(amount);
             //Split the amount and distribute to each member
             //TODO
+            return true;
         }
+        
+        //if latest cycle is > 1 then repay loan before borrowing again
+        //while repaying pay 1 more than what was borrowed
+        if(latestCycle > 1) {
+            lendingPool.repay(address(depositToken), amt.add(1), msg.sender);
+            //emit LoanRepaid(chosen,amt,latestCycle.sub(1));
+        } else {
+            lendingPool.deposit(address(depositToken), amt, 0);
+            lendingPool.setUserUseReserveAsCollateral(address(depositToken),true);
+        }
+        lendingPool.borrow(address(depositToken),MAX_LOAN_AMT,1,0);
+        members[chosen].loanTaken = true;
+        return depositToken.approve(chosen,MAX_LOAN_AMT);
     }
 
     /**
