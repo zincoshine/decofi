@@ -16,7 +16,9 @@
     "openzeppelin-solidity": "^2.5.0",
     "web3": "^1.2.6"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "husky": "^4.2.3"
+  },
   "scripts": {
     "test": "mocha"
   },
