@@ -48,7 +48,7 @@ contract SocialFund is Ownable {
         provider = LendingPoolAddressesProvider(AAVE_LENDING_POOL_ADDR);
         lendingPool = LendingPool(provider.getLendingPool());
         depositToken = IERC20(_tokenAddr);
-        MAX_LOAN_AMT = fundAmt.mul(fundTerm).mul(numParts);
+        MAX_LOAN_AMT = fundAmt.mul(fundTerm).mul(numParts).mul(75).div(100);
     }
 
     function() payable external {
@@ -56,9 +56,9 @@ contract SocialFund is Ownable {
     }
 
     /**
-    *@notice Function used to add list of members associated with the social fund
-    *@param An array of addresses.
-    */
+     *Function used to add list of members associated with the social fund
+     *@param An array of addresses.
+     */
     function addMembers(address[] calldata _members) external onlyOwner returns (bool) {
         require(_members.length == numParts);
         theMembers = _members;
@@ -68,39 +68,48 @@ contract SocialFund is Ownable {
         }
     }
 
-
     /**
-    *TODO
+    * Function collects funds from members deposits to aave
+    * and transfer the loan amount to the chosen member
     */
-    function _depositToAave(address _tokenAddr) internal returns (bool) {
-        require(_tokenAddr != address(0), "Asset address invalid");
-        uint256 amount = depositToken.balanceOf(address(this));
-        require(amount > 0, "Amount invalid");
-        lendingPool.deposit(_tokenAddr, amount, 0);
-        return true;
-    }
-
-    function lottery() external onlyOwner returns (bool) {
-        //fetch funds using sablier stream and deposit in aave
-        //randomnly choose one member and let him withdraw loan
-
-        //sablier.withdrawFromStream(streamId,amount);
-        return true;
+    function lottery(address chosen) external onlyOwner returns (bool) {
+        latestCycle++;
+        uint256 amt = 0;
+        for(uint8 i=0;i<theMembers.length;i++) {
+            uint256 amount = depositToken.allowance(theMembers[i],address(this));
+            amt = amt.add(amount);
+            depositToken.transferFrom(theMembers[i],address(this),amount);
+        }
+        //if latest cycle is > 1 then repay loan before borrowing again
+        //while repaying pay 1 more than what was borrowed
+        if(latestCycle > 1) {
+            lendingPool.repay(address(depositToken), amt.add(1), msg.sender);
+        } else {
+            lendingPool.deposit(address(depositToken), amt, 0);
+            lendingPool.setUserUseReserveAsCollateral(address(depositToken),true);
+        }
+        
+        if(latestCycle < fundTerm) {
+            //allot the loan to the chosen member
+            //borrow based on fixed interest rate
+            lendingPool.borrow(address(depositToken),MAX_LOAN_AMT,1,0);
+            members[chosen].loanTaken = true;
+            return depositToken.approve(chosen,MAX_LOAN_AMT);
+        } else {
+            //TODO payback the loan distribute accrued interests and end contract
+        }
     }
 
     /**
-    *@notice Function used by the winner member to borrow a loan
+    * Function used by the winner member to borrow a loan
     */
     function takeLoan() external onlyMembers returns (bool) {
         require(msg.sender == latestWinner);
-        //borrow using fixed rate of interest
-        lendingPool.borrow(address(depositToken), MAX_LOAN_AMT, 1, 0);
-        //transfer the funds to the winner
         return depositToken.transfer(latestWinner,MAX_LOAN_AMT);
     }
 
     /**
-    *@notice function used to close the fund after its served its purpose.
+    * function used to close the fund after its served its purpose.
     */
     function closeFund() external onlyOwner {
         //close the fund if the term is over
