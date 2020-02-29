@@ -1,0 +1,71 @@
+Arguments: 
+  /usr/local/Cellar/node@12/12.15.0/bin/node /usr/local/Cellar/yarn/1.22.0/libexec/bin/yarn.js add @sablier/protocol
+
+PATH: 
+  /Users/partha/.cargo/bin:/usr/local/opt/node@12/bin:/Users/partha/.serverless/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin:/Users/partha/.cargo/bin:/usr/local/opt/node@12/bin:/Users/partha/.serverless/bin
+
+Yarn version: 
+  1.22.0
+
+Node version: 
+  12.15.0
+
+Platform: 
+  darwin x64
+
+Trace: 
+  Error: https://registry.npmjs.org/@sablier%2fprotocol: Not found
+      at Request.params.callback [as _callback] (/usr/local/Cellar/yarn/1.22.0/libexec/lib/cli.js:66975:18)
+      at Request.self.callback (/usr/local/Cellar/yarn/1.22.0/libexec/lib/cli.js:140727:22)
+      at Request.emit (events.js:223:5)
+      at Request.<anonymous> (/usr/local/Cellar/yarn/1.22.0/libexec/lib/cli.js:141699:10)
+      at Request.emit (events.js:223:5)
+      at IncomingMessage.<anonymous> (/usr/local/Cellar/yarn/1.22.0/libexec/lib/cli.js:141621:12)
+      at Object.onceWrapper (events.js:312:28)
+      at IncomingMessage.emit (events.js:228:7)
+      at endReadableNT (_stream_readable.js:1185:12)
+      at processTicksAndRejections (internal/process/task_queues.js:81:21)
+
+npm manifest: 
+  {
+    "name": "desofi",
+    "version": "0.0.1",
+    "description": "Desofi",
+    "main": "buidler.config.js",
+    "directories": {
+      "test": "test"
+    },
+    "dependencies": {
+      "@nomiclabs/buidler": "^1.2.0",
+      "@nomiclabs/buidler-truffle5": "^1.2.0",
+      "@nomiclabs/buidler-web3": "^1.2.0",
+      "@openzeppelin/contracts": "^2.5.0",
+      "web3": "^1.2.6"
+    },
+    "devDependencies": {},
+    "scripts": {
+      "test": "mocha"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/zincoshine/desofi.git"
+    },
+    "keywords": [
+      "DeFi",
+      "Social",
+      "Finance",
+      "Microfinance"
+    ],
+    "author": "partha@pillarproject.io, rafa@pillarproject.io, alazarevski, msazdova",
+    "license": "ISC",
+    "bugs": {
+      "url": "https://github.com/zincoshine/desofi/issues"
+    },
+    "homepage": "https://github.com/zincoshine/desofi#readme"
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
