@@ -1,0 +1,3 @@
+[submodule "contracts/aave-protocol"]
+	path = contracts/aave-protocol
+	url = https://github.com/aave/aave-protocol
