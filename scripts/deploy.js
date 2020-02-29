@@ -9,10 +9,14 @@ async function main() {
   await env.run("compile");
 
   // We require the artifacts once our contracts are compiled
-  const Greeter = env.artifacts.require("Greeter");
-  const greeter = await Greeter.new("Hello, world!");
+  const SocialFund = env.artifacts.require("SocialFund");
+  const fundName = "Decentralized Social Fund";
+  const fundTerm = 5;
+  const fundAmt = 1000;
+  const aaveDai = "0xff795577d9ac8bd7d90ee22b6c1703490b6512fd";
+  const socialFund = await SocialFund.new(fundName, fundTerm, fundTerm, fundAmt, aaveDai);
 
-  console.log("Greeter address:", greeter.address);
+  console.log("SocialFund address:", socialFund.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

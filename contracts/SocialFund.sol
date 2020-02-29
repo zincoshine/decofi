@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./lendingpool/LendingPool.sol";
 import "./configuration/LendingPoolAddressesProvider.sol";
+import "./tokenization/AToken.sol";
 import "./Types.sol";
 
 contract SocialFund is Ownable {
@@ -19,12 +20,15 @@ contract SocialFund is Ownable {
     mapping (address => uint8) private lotteryStatus;
     //testing with Aave contract on Kovan network
     address constant AAVE_LENDING_POOL_ADDR = 0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5;
+    address constant SABLIER_ADDR = 0xc04Ad234E01327b24a831e3718DBFcbE245904CC;
+    address constant ATOKEN_ADDR = 0x58AD4cB396411B691A9AAb6F74545b2C5217FE6a;
     uint256 MAX_LOAN_AMT;
     
     LendingPoolAddressesProvider provider;
     LendingPool lendingPool; 
     
     IERC20 depositToken;
+    AToken aToken;
     address latestWinner;
     uint8 latestCycle = 0;
 
@@ -48,6 +52,7 @@ contract SocialFund is Ownable {
         provider = LendingPoolAddressesProvider(AAVE_LENDING_POOL_ADDR);
         lendingPool = LendingPool(provider.getLendingPool());
         depositToken = IERC20(_tokenAddr);
+        //sablier = IERC1620(SABLIER_ADDR);
         MAX_LOAN_AMT = fundAmt.mul(fundTerm).mul(numParts).mul(75).div(100);
     }
 
@@ -96,7 +101,13 @@ contract SocialFund is Ownable {
             members[chosen].loanTaken = true;
             return depositToken.approve(chosen,MAX_LOAN_AMT);
         } else {
-            //TODO payback the loan distribute accrued interests and end contract
+            lendingPool.repay(address(depositToken), amt.add(1), msg.sender);
+            //TODO distribute interest equally to all
+            aToken = AToken(ATOKEN_ADDR);
+            uint256 amount = aToken.balanceOf(address(this));
+            aToken.redeem(amount);
+            //Split the amount and distribute to each member
+            //TODO
         }
     }
 
