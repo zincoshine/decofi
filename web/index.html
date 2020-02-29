@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>DE-SO-FI</title>
+
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+
+    <script src="js/web3.min.js"></script>
+
+</head>
+<body>
+<div class="container">
+
+    <h1>Decentralized Social Financing</h1>
+
+    <a data-dh-feature="network" data-dh-property-enable="true" href="#" class="button"><h2>ENABLE WALLET</h2></a>
+
+    <hr/>
+
+    <label for="dh-network-name" class="col-lg-2 control-label">Network Name</label>
+    <br/>
+    <div id="dh-network-name" data-dh-feature="network" data-dh-property-name="true" class="text"></div>
+
+    <hr/>
+
+
+    <label for="dh-user-address" class="col-lg-2 control-label">Address</label>
+    <br/>
+    <div id="dh-user-address" data-dh-feature="user" data-dh-property-address="true" class="text"></div>
+
+    <hr/>
+
+
+    <label for="dh-user-balance-units" class="col-lg-2 control-label">Balance (ETH)</label>
+    <br/>
+    <div
+            id="dh-user-balance-units"
+            data-dh-feature="user"
+            data-dh-property-balance
+            data-dh-modifier-units="ether"
+            data-dh-modifier-decimals="3">
+        *User Balance*
+    </div>
+    <hr/>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+<script src="https://package.dapphero.io/main.js" id="dh-apiKey" data-api="1582926912005x142783468178767870"></script>
+
+
+<script src="js/app.js"></script>
+
+</body>
+</html>
