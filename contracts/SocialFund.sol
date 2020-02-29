@@ -3,66 +3,84 @@ pragma solidity >=0.4.22 <0.6.0;
 import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@sablier/protocol/contracts/Sablier.sol";
+import "./lendingpool/LendingPool.sol";
+import "./configuration/LendingPoolAddressesProvider.sol";
+import "./Types.sol";
 
 contract SocialFund is Ownable {
    using SafeMath for uint;
 
-    fundName string;
-    fundTerm uint8;
-    numParts uint8;
-    address payable INTEREST_VAULT;
-    address payable members[];
-    mapping (address => uint8) lotteryStatus;
-    uint256 constant MAX_LOAN_PERCENT = 85.div(100);
-    address constant AAVE_LENDING_POOL_ADDR = "";
-    address constant SABLIER_ADDRESS = "";
+    string fundName;
+    uint256 fundTerm;
+    uint256 fundAmt;
+    uint256 numParts;
+    address[] theMembers;
+    mapping (address => Types.Member) private members;
+    mapping (address => uint8) private lotteryStatus;
+    //testing with Aave contract on Kovan network
+    address constant AAVE_LENDING_POOL_ADDR = 0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5;
+    uint256 MAX_LOAN_AMT;
     
     LendingPoolAddressesProvider provider;
     LendingPool lendingPool; 
-    Sablier sablier;
     
     IERC20 depositToken;
-    address currentWinner;
+    address latestWinner;
+    uint8 latestCycle = 0;
 
+    modifier onlyMembers() {
+        require(members[msg.sender].isEntity, "Not a valid member");
+        _;
+    }
 
-    constructor(_fundName memory string, 
-                _fundTerm memory uint8, 
-                _numParts memory uint8,
-                _interestVault memory address,
-                _network memory string) {
+    constructor(string memory _fundName, 
+                uint256 _fundTerm, 
+                uint256 _numParts,
+                uint256 _fundAmt,
+                address _tokenAddr) public {
         require(_fundTerm > 0 , "Term invalid");
         require(_numParts > 0, "Number of participants invalid");
-        require(_interestVault != address(0) , "Interest vault invalid");
+        require(_fundAmt > 0, "Amount invalid");
         fundName = _fundName;
         fundTerm = _fundTerm;
         numParts = _numParts;
-        INTEREST_VAULT = _interestVault;
-        sablier = Sablier(SABLIER_ADDRESS);
+        fundAmt = _fundAmt;
         provider = LendingPoolAddressesProvider(AAVE_LENDING_POOL_ADDR);
         lendingPool = LendingPool(provider.getLendingPool());
+        depositToken = IERC20(_tokenAddr);
+        MAX_LOAN_AMT = fundAmt.mul(fundTerm).mul(numParts);
     }
 
-    function addMembers(address[] _members) onlyOwner returns bool {
+    function() payable external {
+        revert();
+    }
+
+    /**
+    *@notice Function used to add list of members associated with the social fund
+    *@param An array of addresses.
+    */
+    function addMembers(address[] calldata _members) external onlyOwner returns (bool) {
         require(_members.length == numParts);
+        theMembers = _members;
         for(uint8 i=0;i<_members.length;i++) {
             require(_members[0] != address(0), "member address invalid");
-            members.push(_members);
+            members[_members[i]] = Types.Member({memberAddr: _members[i], loanTaken: false, isEntity: true});
         }
     }
 
-    function 
 
-    function _depositToAave(address _tokenAddr) internal returns bool {
+    /**
+    *TODO
+    */
+    function _depositToAave(address _tokenAddr) internal returns (bool) {
         require(_tokenAddr != address(0), "Asset address invalid");
-        depositToken = IERC20(_tokenAddr);
-        uint256 amount = token.balanceOf(this);
+        uint256 amount = depositToken.balanceOf(address(this));
         require(amount > 0, "Amount invalid");
         lendingPool.deposit(_tokenAddr, amount, 0);
         return true;
     }
 
-    function lottery() onlyOwner returns bool {
+    function lottery() external onlyOwner returns (bool) {
         //fetch funds using sablier stream and deposit in aave
         //randomnly choose one member and let him withdraw loan
 
@@ -70,13 +88,23 @@ contract SocialFund is Ownable {
         return true;
     }
 
-    function takeLoan() returns bool {
-        //take loan if authorized/approved
-        return true;
+    /**
+    *@notice Function used by the winner member to borrow a loan
+    */
+    function takeLoan() external onlyMembers returns (bool) {
+        require(msg.sender == latestWinner);
+        //borrow using fixed rate of interest
+        lendingPool.borrow(address(depositToken), MAX_LOAN_AMT, 1, 0);
+        //transfer the funds to the winner
+        return depositToken.transfer(latestWinner,MAX_LOAN_AMT);
     }
 
-    function closeFund() onlyOwner bool {
+    /**
+    *@notice function used to close the fund after its served its purpose.
+    */
+    function closeFund() external onlyOwner {
         //close the fund if the term is over
-        return true;
+        require(latestCycle == fundTerm);
+        //selfdestruct();
     }
 }
