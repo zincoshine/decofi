@@ -1,84 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>DE-SO-FI</title>
-
-    <link rel="stylesheet" type="text/css" href="css/main.css">
-
-    <script src="js/web3.min.js"></script>
-
-</head>
-<body>
-<div class="container">
-
-    <h1>Decentralized Social Financing</h1>
-
-    <a data-dh-feature="network" data-dh-property-enable="true" href="#" class="button"><h2>ENABLE WALLET</h2></a>
-
-    <hr/>
-
-    <label for="dh-network-name" class="col-lg-2 control-label">Network Name</label>
-    <br/>
-    <div id="dh-network-name" data-dh-feature="network" data-dh-property-name="true" class="text"></div>
-
-    <hr/>
-
-
-    <label for="dh-user-address" class="col-lg-2 control-label">Address</label>
-    <br/>
-    <div id="dh-user-address" data-dh-feature="user" data-dh-property-address="true" class="text"></div>
-
-    <hr/>
-
-
-    <label for="dh-user-balance-units" class="col-lg-2 control-label">Balance (ETH)</label>
-    <br/>
-    <div
-            id="dh-user-balance-units"
-            data-dh-feature="user"
-            data-dh-property-balance
-            data-dh-modifier-units="ether"
-            data-dh-modifier-decimals="5">
-    </div>
-
-    <hr/>
-
-    <label for="dh-user-balance-dai" class="col-lg-2 control-label">Balance (DAI)</label>
-    <br/>
-    <div
-            id="dh-user-balance-dai"
-            data-dh-feature="customContract"
-            data-dh-property-contract-name="dai"
-            data-dh-property-method-name="balanceOf"
-            data-dh-property-method-id="daiBalance"
-            data-dh-property-eth-value="0"
-            data-dh-property-auto-invoke="true"
-    >
-    </div>
-
-    <input
-            data-dh-property-method-id="daiBalance"
-            data-dh-property-input-name="_owner"
-            value="$CURRENT_USER"
-            style="display:none;"
-    />
-
-    <div
-            data-dh-property-method-id="daiBalance"
-            data-dh-property-outputs="true">
-    </div>
-
-    <hr/>
-
-</div>
-
-<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
-<script src="https://package.dapphero.io/main.js" id="dh-apiKey" data-api="1582926912005x142783468178767870"></script>
-
-<script src="js/app.js"></script>
-
-</body>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <title>DeSoFi</title>
+    <link href="/main.f80a0aeb.css" rel="stylesheet"></head>
+    <body>
+        <div id="root"></div>
+        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+        <script src="https://package.dapphero.io/main.js" id="dh-apiKey" data-api="1582926912005x142783468178767870"></script>
+    <script type="text/javascript" src="/vendors~main.f80a0aeb2705bcaa092b.js"></script><script type="text/javascript" src="/main.f80a0aeb2705bcaa092b.js"></script></body>
 </html>
