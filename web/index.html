@@ -43,13 +43,44 @@
             data-dh-modifier-units="ether"
             data-dh-modifier-decimals="5">
     </div>
+
+    <hr/>
+
+    <label for="dh-user-balance-dai" class="col-lg-2 control-label">Balance (DAI)</label>
+    <br/>
+    <div
+            id="dh-user-balance-dai"
+            data-dh-feature="customContract"
+            data-dh-property-contract-name="dai"
+            data-dh-property-method-name="balanceOf"
+            data-dh-property-method-id="daiBalance"
+            data-dh-property-eth-value="0"
+    >
+    </div>
+
+    <input
+            data-dh-property-method-id="daiBalance"
+            data-dh-property-input-name="_owner"
+            value="$CURRENT_USER"
+            style="display:none;"
+    />
+
+    <div
+            data-dh-property-method-id="daiBalance"
+            data-dh-property-outputs="true">
+    </div>
+
+    <button
+            data-dh-property-method-id="daiBalance"
+            data-dh-property-invoke="true"
+    ></button>
+
     <hr/>
 
 </div>
 
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
 <script src="https://package.dapphero.io/main.js" id="dh-apiKey" data-api="1582926912005x142783468178767870"></script>
-
 
 <script src="js/app.js"></script>
 
