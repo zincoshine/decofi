@@ -14,7 +14,7 @@
 <body>
 <div class="container">
 
-    <h1>Create Social Fund</h1>
+    <h1>Pick a winner!</h1>
 
     <hr/>
 
@@ -24,25 +24,14 @@
 
     <hr/>
 
-    <label for="nPeople" class="col-lg-2 control-label">Number of people</label>
-    <br/>
-    <input type="text" id="nPeople" name="nPeople" placeholder="Number of people">
+    <input type="text" id="winner" name="winner" value="Winner name" disabled>
 
     <hr/>
 
-    <label for="periodTerm" class="col-lg-2 control-label">Period term</label>
-    <br/>
-    <input type="text" id="periodTerm" name="perodTerm" placeholder="Period term">
+    <!-- Send Random and pick a winner! -->
+    <button type="button" value="Lottery">Lottery</button>
 
-    <hr/>
-
-    <label for="asset" class="col-lg-2 control-label">Asset</label>
-    <br/>
-    <input type="text" id="asset" name="asset" value="DAI" disabled>
-
-    <hr/>
-
-    <button type="button" value="Submit">Create loan!</button>
+    <!-- After a winner is picked, display the winner address -->
 </div>
 
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
