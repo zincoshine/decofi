@@ -37,7 +37,7 @@ contract SocialFund is Ownable {
         _;
     }
 
-    event Lottery(address indexed winner,uint8 cycle);
+    event LotteryDecision(address indexed winner,uint8 cycle);
     event LoanInitiated(address indexed member, uint256 amount, uint8 cycle);
     event LoanRepaid(address indexed member, uint256 amount, uint8 cycle);
 
@@ -88,7 +88,7 @@ contract SocialFund is Ownable {
             amt = amt.add(amount);
             depositToken.transferFrom(theMembers[i],address(this),amount);
         }
-
+        emit LotteryDecision(chosen, latestCycle);
         if(latestCycle == fundTerm) {
             lendingPool.repay(address(depositToken), amt.add(1), msg.sender);
             //TODO distribute interest equally to all
@@ -99,7 +99,7 @@ contract SocialFund is Ownable {
             //TODO
             return true;
         }
-        
+
         //if latest cycle is > 1 then repay loan before borrowing again
         //while repaying pay 1 more than what was borrowed
         if(latestCycle > 1) {
@@ -119,6 +119,7 @@ contract SocialFund is Ownable {
     */
     function takeLoan() external onlyMembers returns (bool) {
         require(msg.sender == latestWinner);
+        emit LoanInitiated(latestWinner,MAX_LOAN_AMT,latestCycle);
         return depositToken.transfer(latestWinner,MAX_LOAN_AMT);
     }
 
@@ -129,5 +130,23 @@ contract SocialFund is Ownable {
         //close the fund if the term is over
         require(latestCycle == fundTerm);
         //selfdestruct();
+    }
+
+    function listMembers() onlyOwner external returns (address[]) {
+        return theMembers;
+    }
+
+    function listLoanEligibleMembers() onlyOwner external returns (address[]) {
+        address[] eligMembers;
+        for(uint8 i=0;i<theMembers.length;i++) {
+            if(!members[theMembers[i]].loanTaken) {
+                eligMembers.push(theMembers[i]);
+            }
+        }
+        return eligMembers;
+    }
+
+    function currentWinner() external onlyOwner returns (address) {
+        return latestWinner;
     }
 }
