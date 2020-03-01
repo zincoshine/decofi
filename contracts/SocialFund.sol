@@ -132,18 +132,8 @@ contract SocialFund is Ownable {
         //selfdestruct();
     }
 
-    function listMembers() onlyOwner external returns (address[]) {
+    function listMembers() onlyOwner external returns (address[] memory) {
         return theMembers;
-    }
-
-    function listLoanEligibleMembers() onlyOwner external returns (address[]) {
-        address[] eligMembers;
-        for(uint8 i=0;i<theMembers.length;i++) {
-            if(!members[theMembers[i]].loanTaken) {
-                eligMembers.push(theMembers[i]);
-            }
-        }
-        return eligMembers;
     }
 
     function currentWinner() external onlyOwner returns (address) {
