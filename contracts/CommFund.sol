@@ -29,7 +29,7 @@ contract CommFund is Ownable {
     address[] private theMembers;
     mapping (address => Types.Member) private members;
     mapping (address => uint8) private lotteryStatus;
-    uint256 private MAX_LOAN_AMT;  
+    uint256 private maxLoanAmt;  
     IERC20 private depositToken;
     bool private isOpen = true;
 
@@ -42,6 +42,7 @@ contract CommFund is Ownable {
     */
     address constant AAVE_LENDING_POOL_ADDR = 0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5;
     address constant ATOKEN_ADDR = 0x58AD4cB396411B691A9AAb6F74545b2C5217FE6a;
+    uint256 constant MAX_DAI_LOAN_AMT = 75;
     ILendingPoolAddressesProvider private provider;
     ILendingPool private lendingPool; 
     IAToken private aDaiToken;
@@ -62,6 +63,15 @@ contract CommFund is Ownable {
         _;
     }
 
+    event FundDeployed(
+        address indexed asset,
+        string name,
+        uint term,
+        uint premium,
+        uint numParts,
+        uint maxLoanAmt
+    );
+
     event LotteryDecision(address indexed winner,uint8 cycle);
     event LoanInitiated(address indexed member, uint256 amount, uint8 cycle);
     event LoanRepaid(address indexed member, uint256 amount, uint8 cycle);
@@ -75,6 +85,7 @@ contract CommFund is Ownable {
         require(_numParts > 0, "Number of participants invalid");
         require(_termPrem > 0, "Amount invalid");
         require(_asset != address(0), "Asset can't be empty");
+        require(_numParts == _fundTerm, "Term must match number of participants");
         fundName = _fundName;
         fundTerm = _fundTerm;
         totalParticipants = _numParts;
@@ -85,7 +96,17 @@ contract CommFund is Ownable {
         depositToken = IERC20(_asset);
 
         // maximum amount of loan available is 75% of the pot.
-        MAX_LOAN_AMT = termPremium.mul(fundTerm).mul(totalParticipants).mul(75).div(100);
+        maxLoanAmt = termPremium.mul(fundTerm).mul(totalParticipants).mul(MAX_DAI_LOAN_AMT).div(100);
+
+        //emit the event
+        emit FundDeployed(
+            ATOKEN_ADDR,
+            fundName,
+            fundTerm,
+            termPremium,
+            totalParticipants,
+            maxLoanAmt
+        );
     }
 
     /**
@@ -164,9 +185,9 @@ contract CommFund is Ownable {
             lendingPool.deposit(address(depositToken), amt, 0);
             lendingPool.setUserUseReserveAsCollateral(address(depositToken),true);
         }
-        lendingPool.borrow(address(depositToken),MAX_LOAN_AMT,1,0);
+        lendingPool.borrow(address(depositToken),maxLoanAmt,1,0);
         members[chosen].loanTaken = true;
-        return depositToken.approve(chosen,MAX_LOAN_AMT);
+        return depositToken.approve(chosen,maxLoanAmt);
     }
 
     /**
@@ -174,8 +195,8 @@ contract CommFund is Ownable {
     */
     function borrow() external onlyMembers returns (bool) {
         require(msg.sender == latestWinner);
-        emit LoanInitiated(latestWinner,MAX_LOAN_AMT,latestCycle);
-        return depositToken.transfer(latestWinner,MAX_LOAN_AMT);
+        emit LoanInitiated(latestWinner,maxLoanAmt,latestCycle);
+        return depositToken.transfer(latestWinner,maxLoanAmt);
     }
 
     /**
