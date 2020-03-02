@@ -3,18 +3,18 @@ pragma solidity >=0.4.22 <0.6.0;
 import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./lendingpool/LendingPool.sol";
-import "./configuration/LendingPoolAddressesProvider.sol";
-import "./tokenization/AToken.sol";
+import "./interfaces/aave-protocol/ILendingPool.sol";
+import "./interfaces/aave-protocol/ILendingPoolAddressesProvider.sol";
+import "./interfaces/aave-protocol/IAToken.sol";
 import "./Types.sol";
 
 contract SocialFund is Ownable {
    using SafeMath for uint;
 
-    string fundName;
-    uint256 fundTerm;
-    uint256 fundAmt;
-    uint256 numParts;
+    string public fundName;
+    uint256 public fundTerm;
+    uint256 public fundAmt;
+    uint256 public numParts;
     address[] theMembers;
     mapping (address => Types.Member) private members;
     mapping (address => uint8) private lotteryStatus;
@@ -24,11 +24,11 @@ contract SocialFund is Ownable {
     address constant ATOKEN_ADDR = 0x58AD4cB396411B691A9AAb6F74545b2C5217FE6a;
     uint256 MAX_LOAN_AMT;
     
-    LendingPoolAddressesProvider provider;
-    LendingPool lendingPool; 
+    ILendingPoolAddressesProvider provider;
+    ILendingPool lendingPool; 
     
     IERC20 depositToken;
-    AToken aToken;
+    IAToken aToken;
     address latestWinner;
     uint8 latestCycle = 0;
 
@@ -53,8 +53,8 @@ contract SocialFund is Ownable {
         fundTerm = _fundTerm;
         numParts = _numParts;
         fundAmt = _fundAmt;
-        provider = LendingPoolAddressesProvider(AAVE_LENDING_POOL_ADDR);
-        lendingPool = LendingPool(provider.getLendingPool());
+        provider = ILendingPoolAddressesProvider(AAVE_LENDING_POOL_ADDR);
+        lendingPool = ILendingPool(provider.getLendingPool());
         depositToken = IERC20(_tokenAddr);
         MAX_LOAN_AMT = fundAmt.mul(fundTerm).mul(numParts).mul(75).div(100);
     }
@@ -92,7 +92,7 @@ contract SocialFund is Ownable {
         if(latestCycle == fundTerm) {
             lendingPool.repay(address(depositToken), amt.add(1), msg.sender);
             //TODO distribute interest equally to all
-            aToken = AToken(ATOKEN_ADDR);
+            aToken = IAToken(ATOKEN_ADDR);
             uint256 amount = aToken.balanceOf(address(this));
             aToken.redeem(amount);
             //Split the amount and distribute to each member
@@ -135,6 +135,7 @@ contract SocialFund is Ownable {
     function listMembers() onlyOwner external returns (address[] memory) {
         return theMembers;
     }
+
 
     function currentWinner() external onlyOwner returns (address) {
         return latestWinner;
