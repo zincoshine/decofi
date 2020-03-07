@@ -6,4 +6,10 @@ library Types {
         bool loanTaken;
         bool isEntity;
     }
+
+    struct Fund {
+        address fundAddress;
+        string fundName;
+        bool isActive;
+    }
 }

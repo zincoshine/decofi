@@ -5,26 +5,17 @@ pragma solidity >=0.4.22 <0.6.0;
 @notice Contract to setup a community fund which will invest the pot of pooled investment to aave.
 */
 
-import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/aave-protocol/ILendingPool.sol";
 import "./interfaces/aave-protocol/ILendingPoolAddressesProvider.sol";
 import "./interfaces/aave-protocol/IAToken.sol";
 import "./Types.sol";
+import "./ICommFund.sol";
+import "./SplitTokenPayments.sol";
 
-contract CommFund is Ownable {
+contract CommFund is ICommFund {
    using SafeMath for uint;
-
-    /**
-    @notice Configuration variables describing the fund name
-    @notice term, premium, and total number of participants
-    */
-    string public fundName;
-    uint256 public fundTerm;
-    uint256 public termPremium;
-    uint256 public totalParticipants;
-
 
     address[] private theMembers;
     mapping (address => Types.Member) private members;
@@ -34,18 +25,26 @@ contract CommFund is Ownable {
     bool private isOpen = true;
 
     address latestWinner;
+    address lastWinner = address(0);
     uint8 latestCycle = 0;
+
+    //KOVAN contract address
+    address constant COMM_DB_ADDRESS = 0xd8877d77aD8620A227758e7C7473E7AEC50FcBea;
     
     /**
     @notice Aave configuration parameters.
     @notice term, premium, and total number of participants
     */
+    
     address constant AAVE_LENDING_POOL_ADDR = 0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5;
     address constant ATOKEN_ADDR = 0x58AD4cB396411B691A9AAb6F74545b2C5217FE6a;
     uint256 constant MAX_DAI_LOAN_AMT = 75;
     ILendingPoolAddressesProvider private provider;
     ILendingPool private lendingPool; 
     IAToken private aDaiToken;
+    // Aave pays us kick back for DAI -> aDAI conversion
+    // https://developers.aave.com/#referral-program
+    uint16 public constant AAVE_REFERRAL_CODE = 0;
 
 
     modifier onlyMembers() {
@@ -63,6 +62,13 @@ contract CommFund is Ownable {
         _;
     }
 
+    modifier whenAllFunded() {
+        for(uint i=0;i < theMembers.length; i++) {
+            require(depositToken.allowance(theMembers[i],address(this)) > 0, "Member hasnt deposited funds");
+        }
+        _;
+    }
+
     event FundDeployed(
         address indexed asset,
         string name,
@@ -73,7 +79,7 @@ contract CommFund is Ownable {
     );
 
     event LotteryDecision(address indexed winner,uint8 cycle);
-    event LoanInitiated(address indexed member, uint256 amount, uint8 cycle);
+    event LoanTaken(address indexed member, uint256 amount, uint8 cycle);
     event LoanRepaid(address indexed member, uint256 amount, uint8 cycle);
 
     constructor(string memory _fundName, 
@@ -112,7 +118,7 @@ contract CommFund is Ownable {
     /**
     * @dev Function used add participant addresses to the fund
     **/
-    function addMembers(address[] calldata _members) external onlyOwner onlyWhenOpen returns (bool) {
+    function addMembers(address[] calldata _members) external onlyOwner onlyWhenOpen {
         require(theMembers.length < totalParticipants, "Fund doesnt accept any more members");
         require(_members.length <= totalParticipants, "Fund cant accept any more members");
         for(uint8 i=0;i<_members.length;i++) {
@@ -157,7 +163,9 @@ contract CommFund is Ownable {
     * and transfer the loan amount to the chosen member
     * TODO
     */
-    function lottery(address chosen) external onlyOwner returns (bool) {
+    function lottery(address chosen) external onlyOwner whenAllFunded returns (bool) {
+        lastWinner = latestWinner;
+        latestWinner = chosen;
         latestCycle++;
         uint256 amt = 0;
         for(uint8 i=0;i<theMembers.length;i++) {
@@ -166,28 +174,29 @@ contract CommFund is Ownable {
             depositToken.transferFrom(theMembers[i],address(this),amount);
         }
         emit LotteryDecision(chosen, latestCycle);
-        if(latestCycle == fundTerm) {
-            lendingPool.repay(address(depositToken), amt.add(1), msg.sender);
-            //TODO distribute interest equally to all
-            uint256 amount = aDaiToken.balanceOf(address(this));
-            aDaiToken.redeem(amount);
-            //Split the amount and distribute to each member
-            //TODO
+        //while repaying pay 1 more than what was borrowed
+
+        if(latestCycle == 1) {
+            //For first month just deposit funds to aave and use them as collateral
+            lendingPool.deposit(address(depositToken), amt, AAVE_REFERRAL_CODE);
+            lendingPool.setUserUseReserveAsCollateral(address(depositToken),true);
             return true;
         }
 
-        //if latest cycle is > 1 then repay loan before borrowing again
-        //while repaying pay 1 more than what was borrowed
-        if(latestCycle > 1) {
+        if(latestCycle > 1 && latestCycle <= fundTerm) {
+            //close the previous loan
             lendingPool.repay(address(depositToken), amt.add(1), msg.sender);
-            //emit LoanRepaid(chosen,amt,latestCycle.sub(1));
-        } else {
-            lendingPool.deposit(address(depositToken), amt, 0);
-            lendingPool.setUserUseReserveAsCollateral(address(depositToken),true);
+            emit LoanRepaid(lastWinner,amt,(latestCycle - 1));
+            //Borrow a new loan for the chosen user
+            lendingPool.borrow(address(depositToken),maxLoanAmt,1,0);
+            members[chosen].loanTaken = true;
+            return depositToken.approve(chosen,maxLoanAmt);
+        } 
+
+        if(latestCycle > fundTerm) {
+            //Close the fund and repay all members with interest
+            return closeFund(amt);
         }
-        lendingPool.borrow(address(depositToken),maxLoanAmt,1,0);
-        members[chosen].loanTaken = true;
-        return depositToken.approve(chosen,maxLoanAmt);
     }
 
     /**
@@ -195,16 +204,24 @@ contract CommFund is Ownable {
     */
     function borrow() external onlyMembers returns (bool) {
         require(msg.sender == latestWinner);
-        emit LoanInitiated(latestWinner,maxLoanAmt,latestCycle);
+        emit LoanTaken(latestWinner,maxLoanAmt,latestCycle);
         return depositToken.transfer(latestWinner,maxLoanAmt);
     }
 
     /**
     * function used to close the fund after its served its purpose.
     */
-    function closeFund() external onlyOwner {
+    function closeFund(uint256 amt) internal returns (bool){
+        require(latestCycle > fundTerm);
         //close the fund if the term is over
-        require(latestCycle == fundTerm);
-        //selfdestruct();
+        lendingPool.repay(address(depositToken), amt.add(1), msg.sender);
+        //TODO distribute interest equally to all
+        aDaiToken.redeem(amt);
+        uint256 amount = aDaiToken.balanceOf(address(this));
+        //Split the amount and distribute to each member
+        SplitTokenPayments paySplit = new SplitTokenPayments(theMembers, amount, address(aDaiToken));
+        paySplit.release();
+        //selfdestruct(owner());
+        return true;
     }
 }
