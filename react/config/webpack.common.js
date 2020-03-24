@@ -15,6 +15,9 @@ module.exports = {
         historyApiFallback: true,
         overlay: true,
         open: true,
+        hot: false,
+        inline: false,
+        liveReload: false
     },
     module: {
         rules: [

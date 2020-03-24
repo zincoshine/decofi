@@ -1,22 +1,28 @@
-import { createStore, applyMiddleware, compose } from 'redux';
-import thunk from 'redux-thunk';
+import { createStore, applyMiddleware } from 'redux';
+import {persistStore, persistReducer, createMigrate} from 'redux-persist';
+import storage from 'redux-persist/lib/storage';
+import thunkMiddleware from 'redux-thunk';
 
 import combinedReducers from 'reducers';
 
-let composeEnhancers = null;
 
-if (
-    process.env.NODE_ENV === 'development' &&
-    window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__
-) {
-    composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__;
-} else {
-    composeEnhancers = compose;
+const migrations = {
+    0: (state) => {
+        window.localStorage.clear();
+    }
+};
+
+const persistConfig = {
+    key: 'primary',
+    version:0,
+    storage,
+    migrate: createMigrate(migrations)
+};
+
+const persistedReducer = persistReducer(persistConfig, combinedReducers);
+
+export default () => {
+    let store = createStore(persistedReducer,{}, applyMiddleware(thunkMiddleware));
+    let persistor = persistStore(store);
+    return { store, persistor }
 }
-
-const store = createStore(
-    combinedReducers,
-    composeEnhancers(applyMiddleware(thunk)),
-);
-
-export default store;

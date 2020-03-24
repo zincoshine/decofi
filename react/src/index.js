@@ -1,16 +1,22 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
-import store from 'configs/store';
+import { PersistGate } from 'redux-persist/integration/react'
+import "@babel/polyfill";
+import storeConfig from 'configs/store';
 
 import App from './App';
 
 import './assets/styles/style.sass';
 import './assets/styles/style.css';
 
+const { store, persistor } = storeConfig();
+
 ReactDOM.render(
     <Provider store={store}>
-        <App />
+        <PersistGate loading={null} persistor={persistor}>
+            <App />
+        </PersistGate>
     </Provider>,
     document.getElementById('root'),
 );
