@@ -1,9 +1,9 @@
-import Home from 'components/Home';
-import Admin from 'components/Admin';
-import AdminCreateSocialFund from 'components/AdminCreateSocialFund';
-import AdminAddMembers from 'components/AdminAddMembers';
-import AdminPickLottery from 'components/AdminPickLottery';
-import UserFundStake from 'components/UserFundStake';
+import Home from 'pages/Home';
+import Admin from 'pages/Admin';
+import AdminCreateSocialFund from 'pages/AdminCreateSocialFund';
+import AdminAddMembers from 'pages/AdminAddMembers';
+import AdminPickLottery from 'pages/AdminPickLottery';
+import UserFundStake from 'pages/UserFundStake';
 
 
 const routes = [

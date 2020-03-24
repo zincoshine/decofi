@@ -1,5 +1,11 @@
-import { combineReducers } from 'redux';
+import {combineReducers} from "redux";
+import web3Reducer from './web3Reducer';
+import decofiUserReducer from './decofiUserReducer';
+import decofiAdminReducer from './decofiAdminReducer';
 
-const combinedReducers = combineReducers({});
 
-export default combinedReducers;
+export default combineReducers({
+    web3Reducer,
+    decofiUserReducer,
+    decofiAdminReducer,
+});
