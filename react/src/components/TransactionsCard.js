@@ -1,6 +1,5 @@
 import React from "react";
 import styled from 'styled-components'
-import {connect} from 'react-redux';
 import {Card, Text, Table, Pill, Link, Flex} from "rimble-ui";
 import RimbleWeb3 from 'utilities/RimbleWeb3';
 
@@ -106,12 +105,4 @@ class TransactionsCard extends React.Component {
     }
 }
 
-const mapStateToProps = ({
-    decofiUserReducer: {
-        monthlyStakeTransactions: transactions,
-    },
-}) => ({
-    transactions,
-});
-
-export default connect(mapStateToProps, null)(TransactionsCard);
+export default TransactionsCard;

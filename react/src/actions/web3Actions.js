@@ -1,6 +1,6 @@
 import Web3 from 'web3'
-import { updateMonthlyStakeTransactions } from "reducers/decofiUserReducer";
-import { createNewContractAction, addContractMembers, addContractWinner } from "reducers/decofiAdminReducer";
+import { updateMonthlyStakeTransactions, updateContractSubs } from "reducers/decofiUserReducer";
+import { createNewContractAction, addContractMembers, addContractWinner, updateDeployedContracts } from "reducers/decofiAdminReducer";
 
 const SocialFundABI = require('abis/SocialFund.json');
 const DAIABI = require('abis/DAI.json');
@@ -15,7 +15,44 @@ const web3Factory = () => {
     return web3;
 };
 
-export const getAllTransactionsFromContract = async (contractAddress) => {
+export const getAllContractsForAddress = (address) => {
+    return async (dispatch, getState) => {
+        const web3 = web3Factory();
+        web3.eth.getPastLogs({
+            fromBlock: "earliest",
+            toBlock: "latest",
+            topics: [
+                '0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0',
+                null,
+                address.replace("0x", '0x000000000000000000000000'),
+            ],
+        }).then(async results => {
+            const promises = results.map((result) => {
+                return web3.eth.getTransaction(result.transactionHash).then(tx => {
+                    return Promise.resolve(tx);
+                }).catch(er => {
+                    console.log(er);
+                });
+            });
+            const contractDeployments = await Promise.all(promises);
+            const finalList = contractDeployments ?
+                contractDeployments.filter((txs) => {
+                    return txs.creates && txs.input.startsWith(SocialFundABI["bytecode"]);
+                }).map(fintx => {
+                    return {
+                        contractAddress: fintx.creates,
+                    }
+                }) :
+                [];
+            dispatch(updateDeployedContracts(finalList));
+            dispatch(updateContractSubs(finalList));
+        }).catch(e => {
+            console.log("ERROR GETTING TRANSACTIONS", e);
+        })
+    };
+};
+
+export const getAllTransactionsFromContract = async (contractAddress, targetAddress) => {
     const web3 = web3Factory();
     return web3.eth.getPastLogs({
         fromBlock: "earliest",
@@ -24,7 +61,7 @@ export const getAllTransactionsFromContract = async (contractAddress) => {
         topics: [
             '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925',
             web3.currentProvider.selectedAddress.replace("0x", '0x000000000000000000000000'),
-            null
+            targetAddress.replace("0x", '0x000000000000000000000000'),
         ],
     }).then(async results => {
         const promises = results.map(async (result) => {
@@ -207,14 +244,14 @@ export const getCurrentWinnerAction = async () => {
     }
 };
 
-export const syncDaiTransactionsAction = () => {
+export const syncDaiTransactionsAction = (contractAddress) => {
     return async (dispatch, getState) => {
         const {
             decofiUserReducer: {
                 monthlyStakeTransactions = [],
             }
         } = getState();
-        const transactions = await getAllTransactionsFromContract('0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD');
+        const transactions = await getAllTransactionsFromContract('0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD', contractAddress);
         const allDaiTransactions = transactions.filter(x => x.error !== true);
         const results = [];
         allDaiTransactions.forEach(adt => {
@@ -231,23 +268,21 @@ export const syncDaiTransactionsAction = () => {
                 results.push({...adt, created: Date.now(), lastUpdated: Date.now(), status, method})
             }
         });
-        if (results.length > 0 && results.length >= monthlyStakeTransactions.length) {
-            dispatch(updateMonthlyStakeTransactions(results));
-        }
+        dispatch(updateMonthlyStakeTransactions(results));
     }
 };
 
-export const stakeDaiAction = (value) => {
+export const stakeDaiAction = (value, contractAddress) => {
     return (dispatch, getState) => {
         const web3 = web3Factory();
 
         const daiContract = new web3.eth.Contract(DAIABI["abi"], '0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD');
 
-        daiContract.methods.approve('0x1dafc8be4f16555441cb2636abd07445b5907ae4', web3.utils.toWei(value.toString(), "ether")
+        daiContract.methods.approve(contractAddress, web3.utils.toWei(value.toString(), "ether")
         ).send({
             from: web3.currentProvider.selectedAddress,
         }).then(async receipt => {
-            dispatch(syncDaiTransactionsAction())
+            dispatch(syncDaiTransactionsAction(contractAddress))
         }).catch(e => {
             console.log("STAKE DAI ERROR", e);
         });

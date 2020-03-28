@@ -12,11 +12,15 @@ import {
 
 import {getMembersAction, getWinnersAction, lotteryPickAction} from 'actions/web3Actions';
 import {connect} from "react-redux";
+import ContractList from 'components/ContractList';
 
 const CreateForm = (props) => {
 
-    const contract = props.contracts[props.contracts.length - 1];
-    const { contractAddress } = contract;
+    const contract = props.contracts && props.contracts.length > 0 ? props.contracts[0] : null;
+    const firstAddress = contract ? contract.contractAddress : null;
+    const firstName = contract ? contract.fundName : '';
+    const [contractAddress, setContractAddress] = useState(firstAddress);
+    const [fundName, setFundName] = useState(firstName);
     const [memberAddresses, setMemberAddresses] = useState([]);
     const [members, setMembers] = useState([]);
     const [winners, setWinners] = useState([]);
@@ -39,45 +43,60 @@ const CreateForm = (props) => {
 
     const handleClick = () => {
         const theWinner = memberAddresses[Math.floor(Math.random() * memberAddresses.length)];
-        if(winners.includes(theWinner)){
+        if (winners.includes(theWinner)) {
             handleClick();
-        }else{
+        } else {
             setPickedAddress(theWinner);
             props.lotteryPick(contractAddress, theWinner)
         }
     };
 
+
+    const onContractChange = (item) => {
+        setContractAddress(item.contractAddress);
+        setFundName(item.fundName ? item.fundName : '');
+        setWinners([]);
+        setMemberAddresses([]);
+        setPickedAddress('');
+        setMembers([]);
+    };
+
     return (
         <Card maxWidth={'640px'} mx={'auto'} p={3} px={4} mb={'150px'}>
-                <Heading>Pick a lottery winner</Heading>
-
-                <hr/>
-                {!!pickedAddress &&
-                <Box p={4}>
-                    <h4>The winner is : </h4>
-                    <Box color={'greenyellow'} width={[1, 1, 1]} mt={15} px={3}>
-                        <EthAddress width={1} address={pickedAddress}/>
-                    </Box>
+            <Heading>Pick a lottery winner: {fundName}</Heading>
+            <Box px={3}>
+                <ContractList
+                    onChange={onContractChange}
+                    contracts={props.contracts}
+                />
+            </Box>
+            <hr/>
+            {!!pickedAddress &&
+            <Box p={4}>
+                <h4>The winner is : </h4>
+                <Box color={'greenyellow'} width={[1, 1, 1]} mt={15} px={3}>
+                    <EthAddress width={1} address={pickedAddress}/>
                 </Box>
-                }
-                {!pickedAddress &&
-                    <Box p={4}>
-                        <Box width={[1, 1, 1]} mt={20} px={3}>
-                            <Button onClick={getMembers}>
-                                Get Members from Fund
-                            </Button>
-                        </Box>
-                        <Box width={[1, 1, 1]} mt={20} px={3}>
-                            {members}
-                        </Box>
-                        <Box width={[1, 1, 1]} mt={20} px={3}>
-                            <Button onClick={handleClick}>
-                                Pick a Winner
-                            </Button>
-                        </Box>
-                    </Box>
-                }
-            </Card>
+            </Box>
+            }
+            {!pickedAddress &&
+            <Box p={4}>
+                <Box width={[1, 1, 1]} mt={20} px={3}>
+                    <Button onClick={getMembers}>
+                        Get Members from Fund
+                    </Button>
+                </Box>
+                <Box width={[1, 1, 1]} mt={20} px={3}>
+                    {members}
+                </Box>
+                <Box width={[1, 1, 1]} mt={20} px={3}>
+                    <Button onClick={handleClick}>
+                        Pick a Winner
+                    </Button>
+                </Box>
+            </Box>
+            }
+        </Card>
     );
 };
 
@@ -104,7 +123,7 @@ const mapStateToProps = (
         contracts,
     }
 }) => ({
-contracts,
+    contracts,
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(withRouter(AdminPickLottery));

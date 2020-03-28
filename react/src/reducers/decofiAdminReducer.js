@@ -11,6 +11,13 @@ export function createNewContractAction(contract) {
     };
 }
 
+export function updateDeployedContracts(contracts) {
+    return {
+        type: "UPDATE_DEPLOYED_CONTRACTS",
+        payload: contracts
+    };
+}
+
 export function addContractMembers(contractAddress, members) {
     return {
         type: "ADD_CONTRACT_MEMBERS",
@@ -33,6 +40,17 @@ export default (state = initialState, action) => {
             return {
                 ...state,
                 contracts: allContracts,
+            };
+        case "UPDATE_DEPLOYED_CONTRACTS":
+            const contracts = [...state.contracts];
+            action.payload.forEach(contract => {
+                if(!contracts.some(x => x.contractAddress === contract.contractAddress)){
+                    contracts.push(contract);
+                }
+            });
+            return {
+                ...state,
+                contracts,
             };
         case "ADD_CONTRACT_MEMBERS":
             const allContractMembers = state.contractMembers ? [...state.contractMembers] : [];

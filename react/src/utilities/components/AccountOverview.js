@@ -26,7 +26,7 @@ class AccountOverview extends React.Component {
           <Flex border={1} borderColor={'moon-gray'} p={1}>
             <QR
               value={this.props.account}
-              size={'4rem'}
+              size={64}
               renderAs={'svg'}
             />
           </Flex>
@@ -34,7 +34,7 @@ class AccountOverview extends React.Component {
         <Box>
           <Text.span fontSize={1} color={'mid-gray'}>
             Public Address:
-            <div style={{'word-break': 'break-word'}}>
+            <div style={{wordBreak: 'break-word'}}>
               {this.props.account}
             </div>
           </Text.span>

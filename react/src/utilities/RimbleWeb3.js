@@ -7,7 +7,7 @@ import {ToastMessage} from "rimble-ui";
 import TransactionToastUtil from "./TransactionToastUtil";
 import {connect} from "react-redux";
 import { updateWeb3Action, updateDaiBalanceAction } from 'reducers/web3Reducer';
-import { getDaiBalanceAction, syncDaiTransactionsAction } from 'actions/web3Actions';
+import { getDaiBalanceAction, syncDaiTransactionsAction, getAllContractsForAddress } from 'actions/web3Actions';
 
 const RimbleTransactionContext = React.createContext({
   contract: {},
@@ -221,6 +221,8 @@ class RimbleTransaction extends React.Component {
           // After account is complete, get the balance
           this.getAccountBalance(account);
 
+          this.props.updateDeployedContracts(account);
+
           // Watch for account change
           this.pollAccountUpdates();
         });
@@ -348,8 +350,8 @@ class RimbleTransaction extends React.Component {
     this.openValidationPendingModal();
 
     console.log("Requesting web3 personal sign");
-    return window.web3.personal.sign(
-      window.web3.fromUtf8(
+    return window.web3.eth.personal.sign(
+      window.web3.utils.fromUtf8(
         `Hello there. This request is a signature request so we can authenticate you to the DeCoFi dApp.`
       ),
       this.state.account,
@@ -408,8 +410,6 @@ class RimbleTransaction extends React.Component {
       await this.initAccount();
       if (!this.state.accountValidated) {
         await this.validateAccount();
-      }else{
-        this.props.syncDaiApprovals();
       }
     }
   };
@@ -513,7 +513,6 @@ class RimbleTransaction extends React.Component {
         }
 
         this.getAccountBalance();
-        this.props.syncDaiApprovals();
 
         if (requiresUpdate) {
           clearInterval(accountInterval);
@@ -1023,7 +1022,6 @@ class RimbleTransaction extends React.Component {
     return (
       <div>
         <RimbleTransactionContext.Provider value={this.state} {...this.props} />
-        <TransactionToastUtil transaction={this.state.transaction} transactions={this.props.transactions}/>
         <ConnectionModalUtil
           initAccount={this.state.initAccount}
           account={this.state.account}
@@ -1044,7 +1042,8 @@ const actionToProps = dispatch => {
   return {
     updateWeb3: (currentState) => dispatch(updateWeb3Action(currentState)),
     updateDaiBalance: (daiBalance) => dispatch(updateDaiBalanceAction(daiBalance)),
-    syncDaiApprovals: () => dispatch(syncDaiTransactionsAction())
+    syncDaiApprovals: () => dispatch(syncDaiTransactionsAction()),
+    updateDeployedContracts: (address) => dispatch(getAllContractsForAddress(address)),
   };
 };
 const mapStateToProps = state => ({
