@@ -157,7 +157,6 @@ contract CommFund is Ownable {
     */
     function addMember(address _member) external onlyOwner onlyWhenOpen {
         require(_member != address(0), "Participant address is invalid");
-        require(theMembers.length == _totalParticipants, "Fund cant accept any more members");
         members[_member] = Types.Member({memberAddr: _member, loanTaken: false, isEntity: true});
         theMembers.push(_member);
         if (theMembers.length == _totalParticipants) {
