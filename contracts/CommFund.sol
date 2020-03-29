@@ -7,11 +7,11 @@ pragma solidity >=0.4.22 <0.6.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "./interfaces/aave-protocol/ILendingPool.sol";
 import "./interfaces/aave-protocol/ILendingPoolAddressesProvider.sol";
 import "./interfaces/aave-protocol/IAToken.sol";
 import "./Types.sol";
-import "./ICommFund.sol";
 import "./SplitTokenPayments.sol";
 
 contract CommFund is Ownable {
@@ -96,7 +96,7 @@ contract CommFund is Ownable {
         require(numParts > 0, "Number of participants invalid");
         require(termPrem > 0, "Amount invalid");
         require(asset != address(0), "Asset can't be empty");
-        require(numParts == _fundTerm, "Term must match number of participants");
+        require(numParts == fundTerm, "Term must match number of participants");
         _fundName = fundName;
         _fundTerm = fundTerm;
         _totalParticipants = numParts;
