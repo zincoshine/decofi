@@ -14,8 +14,13 @@ import "./Types.sol";
 import "./ICommFund.sol";
 import "./SplitTokenPayments.sol";
 
-contract CommFund is ICommFund {
+contract CommFund is Ownable {
    using SafeMath for uint;
+
+    string private _fundName;
+    uint256 private _fundTerm;
+    uint256 private _termPremium;
+    uint256 private _totalParticipants;
 
     address[] private theMembers;
     mapping (address => Types.Member) private members;
@@ -82,51 +87,67 @@ contract CommFund is ICommFund {
     event LoanTaken(address indexed member, uint256 amount, uint8 cycle);
     event LoanRepaid(address indexed member, uint256 amount, uint8 cycle);
 
-    constructor(string memory _fundName, 
-                uint256 _fundTerm, 
-                uint256 _numParts,
-                uint256 _termPrem,
-                address _asset) public {
-        require(_fundTerm > 0 , "Term invalid");
-        require(_numParts > 0, "Number of participants invalid");
-        require(_termPrem > 0, "Amount invalid");
-        require(_asset != address(0), "Asset can't be empty");
-        require(_numParts == _fundTerm, "Term must match number of participants");
-        fundName = _fundName;
-        fundTerm = _fundTerm;
-        totalParticipants = _numParts;
-        termPremium = _termPrem;
+    constructor(string memory fundName, 
+                uint256 fundTerm, 
+                uint256 numParts,
+                uint256 termPrem,
+                address asset) public {
+        require(fundTerm > 0 , "Term invalid");
+        require(numParts > 0, "Number of participants invalid");
+        require(termPrem > 0, "Amount invalid");
+        require(asset != address(0), "Asset can't be empty");
+        require(numParts == _fundTerm, "Term must match number of participants");
+        _fundName = fundName;
+        _fundTerm = fundTerm;
+        _totalParticipants = numParts;
+        _termPremium = termPrem;
         aDaiToken = IAToken(ATOKEN_ADDR);
         provider = ILendingPoolAddressesProvider(AAVE_LENDING_POOL_ADDR);
         lendingPool = ILendingPool(provider.getLendingPool());
-        depositToken = IERC20(_asset);
+        depositToken = IERC20(asset);
 
         // maximum amount of loan available is 75% of the pot.
-        maxLoanAmt = termPremium.mul(fundTerm).mul(totalParticipants).mul(MAX_DAI_LOAN_AMT).div(100);
+        maxLoanAmt = _termPremium.mul(fundTerm).mul(_totalParticipants).mul(MAX_DAI_LOAN_AMT).div(100);
 
         //emit the event
         emit FundDeployed(
             ATOKEN_ADDR,
-            fundName,
-            fundTerm,
-            termPremium,
-            totalParticipants,
+            _fundName,
+            _fundTerm,
+            _termPremium,
+            _totalParticipants,
             maxLoanAmt
         );
+    }
+
+    function fundName() view external returns (string memory) {
+        return _fundName;
+    }
+
+    function fundTerm() view external returns (uint256) {
+        return _fundTerm;
+    }
+
+    function termPremium() view external returns (uint256) {
+        return _termPremium;
+    }
+
+    function totalParticipants() view external returns (uint256) {
+        return _totalParticipants;
     }
 
     /**
     * @dev Function used add participant addresses to the fund
     **/
     function addMembers(address[] calldata _members) external onlyOwner onlyWhenOpen {
-        require(theMembers.length < totalParticipants, "Fund doesnt accept any more members");
-        require(_members.length <= totalParticipants, "Fund cant accept any more members");
+        require(theMembers.length < _totalParticipants, "Fund doesnt accept any more members");
+        require(_members.length <= _totalParticipants, "Fund cant accept any more members");
         for(uint8 i=0;i<_members.length;i++) {
             require(_members[0] != address(0), "member address invalid");
             members[_members[i]] = Types.Member({memberAddr: _members[i], loanTaken: false, isEntity: true});
             theMembers.push(_members[i]);
         }
-        if (theMembers.length == totalParticipants) {
+        if (theMembers.length == _totalParticipants) {
             isOpen = false;
         }
     }
@@ -136,10 +157,10 @@ contract CommFund is ICommFund {
     */
     function addMember(address _member) external onlyOwner onlyWhenOpen {
         require(_member != address(0), "Participant address is invalid");
-        require(theMembers.length == totalParticipants, "Fund cant accept any more members");
+        require(theMembers.length == _totalParticipants, "Fund cant accept any more members");
         members[_member] = Types.Member({memberAddr: _member, loanTaken: false, isEntity: true});
         theMembers.push(_member);
-        if (theMembers.length == totalParticipants) {
+        if (theMembers.length == _totalParticipants) {
             isOpen = false;
         }
     }
@@ -183,7 +204,7 @@ contract CommFund is ICommFund {
             return true;
         }
 
-        if(latestCycle > 1 && latestCycle <= fundTerm) {
+        if(latestCycle > 1 && latestCycle <= _fundTerm) {
             //close the previous loan
             lendingPool.repay(address(depositToken), amt.add(1), msg.sender);
             emit LoanRepaid(lastWinner,amt,(latestCycle - 1));
@@ -193,7 +214,7 @@ contract CommFund is ICommFund {
             return depositToken.approve(chosen,maxLoanAmt);
         } 
 
-        if(latestCycle > fundTerm) {
+        if(latestCycle > _fundTerm) {
             //Close the fund and repay all members with interest
             return closeFund(amt);
         }
@@ -212,7 +233,7 @@ contract CommFund is ICommFund {
     * function used to close the fund after its served its purpose.
     */
     function closeFund(uint256 amt) internal returns (bool){
-        require(latestCycle > fundTerm);
+        require(latestCycle > _fundTerm);
         //close the fund if the term is over
         lendingPool.repay(address(depositToken), amt.add(1), msg.sender);
         //TODO distribute interest equally to all

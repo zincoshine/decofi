@@ -5,17 +5,12 @@ import "@openzeppelin/contracts/ownership/Ownable.sol";
 *@title ICommFund interface
 */
 
-contract ICommFund is Ownable {
-
-    /**
-    @notice Configuration variables describing the fund name
-    @notice term, premium, and total number of participants
-    */
-    string public fundName;
-    uint256 public fundTerm;
-    uint256 public termPremium;
-    uint256 public totalParticipants;
-   
+contract ICommFund {
+    function owner() public view returns (address);
+    function fundName() view external returns (string memory);
+    function fundTerm() view external returns (uint256);
+    function termPremium() view external returns (uint256);
+    function totalParticipants() view external returns (uint256);
     function addMembers(address[] calldata _members) external;
     function addMember(address _member) external;
     function listMembers() view external returns (address[] memory);
