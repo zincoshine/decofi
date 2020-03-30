@@ -1022,6 +1022,7 @@ class RimbleTransaction extends React.Component {
     return (
       <div>
         <RimbleTransactionContext.Provider value={this.state} {...this.props} />
+        <TransactionToastUtil transaction={this.state.transaction} transactions={[]}/>
         <ConnectionModalUtil
           initAccount={this.state.initAccount}
           account={this.state.account}
