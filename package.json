@@ -14,9 +14,7 @@
     "@openzeppelin/contracts-ethereum-package": "^2.4.0",
     "web3": "^1.2.6"
   },
-  "devDependencies": {
-    "husky": "^4.2.3"
-  },
+  "devDependencies": {},
   "scripts": {
     "test": "mocha"
   },
