@@ -2,7 +2,7 @@ import Web3 from 'web3'
 import { updateMonthlyStakeTransactions, updateContractSubs } from "reducers/decofiUserReducer";
 import { createNewContractAction, addContractMembers, addContractWinner, updateDeployedContracts } from "reducers/decofiAdminReducer";
 
-const SocialFundABI = require('abis/SocialFund.json');
+const SocialFundABI = require('abis/CommFund.json');
 const DAIABI = require('abis/DAI.json');
 
 const web3Factory = () => {
@@ -116,14 +116,25 @@ export const addMembersAction = (contractAddress, addressList, navigator) => {
 
         const socFundContract = new web3.eth.Contract(SocialFundABI["abi"], contractAddress);
 
-        socFundContract.methods.addMembers(addressList).send({
-            from: web3.currentProvider.selectedAddress,
-        }).then(receipt => {
-            dispatch(addContractMembers(contractAddress, [...addressList]));
-            navigator.push('/admin', {...navigator.location.state, addressList});
-        }).catch(e => {
-            console.log("Add Members Error", e);
-        })
+        if(addressList.length === 1){
+            socFundContract.methods.addMember(addressList[0]).send({
+                from: web3.currentProvider.selectedAddress,
+            }).then(receipt => {
+                dispatch(addContractMembers(contractAddress, [...addressList]));
+                navigator.push('/admin', {...navigator.location.state, addressList});
+            }).catch(e => {
+                console.log("Add Member Error", e);
+            })
+        } else {
+            socFundContract.methods.addMembers(addressList).send({
+                from: web3.currentProvider.selectedAddress,
+            }).then(receipt => {
+                dispatch(addContractMembers(contractAddress, [...addressList]));
+                navigator.push('/admin', {...navigator.location.state, addressList});
+            }).catch(e => {
+                console.log("Add Members Error", e);
+            })
+        }
 
         //navigator.push('/admin')
     }
@@ -157,7 +168,7 @@ export const getMembersAction = async (contractAddress) => {
         return [
             '0x3d28c179A51465E545b07efE5a96593b6E8d0731',
             '0x3d28c179A51465E545b07efE5a96593b6E8d0732',
-            '0x3d28c179A51465E545b07efE5a96593b6E8d0733',
+            '0xf00715BE00827789C086053Bb66E27ea7DF2f23c',
             '0x3d28c179A51465E545b07efE5a96593b6E8d0734',
             '0x3d28c179A51465E545b07efE5a96593b6E8d0735',
             '0x3d28c179A51465E545b07efE5a96593b6E8d0736',
